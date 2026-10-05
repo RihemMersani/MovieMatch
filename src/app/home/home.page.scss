@@ -1,6 +1,6 @@
 #container {
+  padding: 28px 20px;
   text-align: center;
-
   position: absolute;
   left: 0;
   right: 0;
@@ -8,7 +8,23 @@
   transform: translateY(-50%);
 }
 
+ion-content {
+  --background: var(--mm-cream);
+}
+
+ion-toolbar {
+  --background: #ffffff;
+  --color: var(--mm-ink);
+  --border-color: var(--mm-border);
+}
+
+ion-button {
+  --color: var(--ion-color-secondary);
+  font-weight: 700;
+}
+
 #container strong {
+  color: var(--mm-ink);
   font-size: 20px;
   line-height: 26px;
 }
@@ -17,11 +33,12 @@
   font-size: 16px;
   line-height: 22px;
 
-  color: #8c8c8c;
+  color: var(--mm-muted);
 
   margin: 0;
 }
 
 #container a {
+  color: var(--ion-color-primary);
   text-decoration: none;
 }

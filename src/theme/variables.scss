@@ -1,2 +1,23 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+:root {
+	--ion-font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+	--ion-background-color: #fff8fb;
+	--ion-text-color: #3c2940;
+	--ion-color-primary: #d85b8d;
+	--ion-color-primary-rgb: 216, 91, 141;
+	--ion-color-primary-contrast: #ffffff;
+	--ion-color-primary-contrast-rgb: 255, 255, 255;
+	--ion-color-primary-shade: #be507c;
+	--ion-color-primary-tint: #dc6b98;
+	--ion-color-secondary: #8c72c5;
+	--ion-color-tertiary: #f2a27f;
+	--ion-color-success: #6fae99;
+	--ion-color-warning: #e6ad55;
+	--ion-color-danger: #ce5872;
+	--mm-ink: #3c2940;
+	--mm-muted: #846f83;
+	--mm-cream: #fff8fb;
+	--mm-blush: #ffe7f0;
+	--mm-lilac: #eee8fb;
+	--mm-peach: #fff0e9;
+	--mm-border: #f0d8e5;
+}
