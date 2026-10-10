@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import {
   IonBackButton,
   IonButton,
@@ -83,12 +84,16 @@ export class ProfilePage implements OnInit {
     this.errorMessage = '';
 
     try {
-      await Camera.requestPermissions({ permissions: ['camera'] });
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        await Camera.requestPermissions({ permissions: ['camera'] });
+      }
+
       const photo = await Camera.getPhoto({
         quality: 85,
         allowEditing: true,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
+        source: isNative ? CameraSource.Camera : CameraSource.Prompt,
       });
 
       if (photo.dataUrl) {
@@ -96,7 +101,9 @@ export class ProfilePage implements OnInit {
         this.photoUrl = photo.dataUrl;
       }
     } catch {
-      this.errorMessage = 'La caméra est indisponible ou son accès a été refusé.';
+      this.errorMessage = Capacitor.isNativePlatform()
+        ? 'La caméra est indisponible ou son accès a été refusé.'
+        : 'Aucune photo n’a été sélectionnée. Autorisez l’accès à la caméra ou choisissez une image.';
     }
   }
 
@@ -132,6 +139,7 @@ export class ProfilePage implements OnInit {
       this.selectedPhoto = '';
       this.successMessage = 'Profil mis à jour.';
     } catch (error) {
+      console.error('Profile update failed', error);
       this.errorMessage = this.getErrorMessage(error);
     } finally {
       this.isSaving = false;
@@ -147,6 +155,35 @@ export class ProfilePage implements OnInit {
       return 'Votre session Firebase est indisponible.';
     }
 
+    const code = this.getFirebaseErrorCode(error);
+    switch (code) {
+      case 'permission-denied':
+        return 'Firebase refuse cette modification. Vérifiez les règles Firestore.';
+      case 'storage/unauthorized':
+        return 'Firebase Storage refuse l’envoi. Vérifiez les règles Storage.';
+      case 'storage/unauthenticated':
+        return 'Votre session a expiré. Reconnectez-vous avant de modifier votre profil.';
+      case 'storage/object-not-found':
+        return 'Le fichier photo est introuvable dans Firebase Storage.';
+      case 'storage/quota-exceeded':
+        return 'Le quota Firebase Storage est dépassé.';
+      case 'storage/invalid-argument':
+        return 'La photo sélectionnée est invalide.';
+      case 'storage/unknown':
+        return 'Firebase Storage est indisponible. Vérifiez que Storage est activé dans Firebase.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+        return 'Firebase ne répond pas. Vérifiez votre connexion puis réessayez.';
+    }
+
     return 'Impossible d’enregistrer le profil. Vérifiez Firebase et réessayez.';
+  }
+
+  private getFirebaseErrorCode(error: unknown): string {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      return String(error.code);
+    }
+
+    return '';
   }
 }

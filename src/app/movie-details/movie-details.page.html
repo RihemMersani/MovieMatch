@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/movies"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Détails</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="details-content">
+  @if (isLoading) {
+    <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
+  } @else if (errorMessage) {
+    <ion-text color="danger"><p class="state-message">{{ errorMessage }}</p></ion-text>
+  } @else if (movie) {
+    <main class="details-shell">
+      <div class="backdrop" [style.background-image]="'url(' + backdropUrl(movie) + ')'">
+        <ion-img [src]="posterUrl(movie)" [alt]="movie.title"></ion-img>
+      </div>
+      <section class="details-copy">
+        <p class="eyebrow">{{ movie.releaseDate || 'Date inconnue' }}</p>
+        <h1>{{ movie.title }}</h1>
+        <p class="rating">★ {{ movie.voteAverage | number: '1.1-1' }} / 10</p>
+        <p class="overview">{{ movie.overview || 'Aucune description disponible.' }}</p>
+        <ion-button type="button" (click)="toggleFavorite()">
+          {{ isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' }}
+        </ion-button>
+        @if (favoriteMessage) {
+          <p class="favorite-message">{{ favoriteMessage }}</p>
+        }
+        @if (movie.genres.length) {
+          <div class="genres">
+            @for (genre of movie.genres; track genre) {
+              <span>{{ genre }}</span>
+            }
+          </div>
+        }
+      </section>
+    </main>
+  }
+</ion-content>

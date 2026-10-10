@@ -22,4 +22,12 @@ export class HomePage {
   async openProfile(): Promise<void> {
     await this.router.navigateByUrl('/profile');
   }
+
+  async openMovies(): Promise<void> {
+    await this.router.navigateByUrl('/movies');
+  }
+
+  async openFavorites(): Promise<void> {
+    await this.router.navigateByUrl('/favorites');
+  }
 }

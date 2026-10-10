@@ -1,0 +1,37 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Mes favoris</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="favorites-content">
+  <main class="favorites-shell">
+    @if (isLoading) {
+      <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (errorMessage) {
+      <ion-text color="danger"><p class="state-message">{{ errorMessage }}</p></ion-text>
+    } @else if (!movies.length) {
+      <section class="empty-state">
+        <span class="empty-icon">♡</span>
+        <h1>Aucun favori pour le moment</h1>
+        <p>Ajoutez des films depuis le catalogue pour les retrouver ici.</p>
+      </section>
+    } @else {
+      <section class="movie-grid" aria-label="Mes films favoris">
+        @for (movie of movies; track movie.id) {
+          <ion-card button (click)="openDetails(movie)">
+            <ion-img [src]="posterUrl(movie)" [alt]="movie.title"></ion-img>
+            <ion-card-header><ion-card-title>{{ movie.title }}</ion-card-title></ion-card-header>
+            <ion-card-content>
+              <span>★ {{ movie.voteAverage | number: '1.1-1' }}</span>
+              <ion-button fill="clear" size="small" (click)="$event.stopPropagation(); removeFavorite(movie)">Retirer</ion-button>
+            </ion-card-content>
+          </ion-card>
+        }
+      </section>
+    }
+  </main>
+</ion-content>

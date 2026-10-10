@@ -11,4 +11,5 @@ export interface Movie {
   genres: string[];
   source: MovieSource;
   tmdbId?: number;
+  createdAt?: unknown;
 }

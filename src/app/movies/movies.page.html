@@ -1,0 +1,43 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Films</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="movies-content">
+  <main class="movies-shell">
+    <form class="search-form" [formGroup]="searchForm" (ngSubmit)="search()">
+      <ion-item>
+        <ion-label position="stacked">Rechercher un film</ion-label>
+        <ion-input formControlName="search" placeholder="Titre du film"></ion-input>
+      </ion-item>
+      <ion-button type="submit">Rechercher</ion-button>
+    </form>
+
+    @if (isLoading) {
+      <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (errorMessage) {
+      <ion-text color="danger"><p class="state-message">{{ errorMessage }}</p></ion-text>
+    } @else if (!movies.length) {
+      <p class="state-message">Aucun film disponible pour le moment.</p>
+    } @else {
+      <section class="movie-grid" aria-label="Catalogue de films">
+        @for (movie of movies; track movie.id) {
+          <ion-card button (click)="openDetails(movie)">
+            <ion-img [src]="posterUrl(movie)" [alt]="movie.title"></ion-img>
+            <ion-card-header>
+              <ion-card-title>{{ movie.title }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <span>{{ movie.releaseDate || 'Date inconnue' }}</span>
+              <strong>★ {{ movie.voteAverage | number: '1.1-1' }}</strong>
+            </ion-card-content>
+            <ion-button fill="clear" size="small" (click)="toggleFavorite(movie, $event)">
+              {{ isFavorite(movie) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}
+            </ion-button>
+          </ion-card>
+        }
+      </section>
+    }
+  </main>
+</ion-content>

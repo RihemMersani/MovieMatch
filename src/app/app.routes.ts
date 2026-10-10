@@ -22,6 +22,21 @@ export const routes: Routes = [
     loadComponent: () => import('./profile/profile.page').then((m) => m.ProfilePage),
   },
   {
+    path: 'movies',
+    canActivate: [authGuard],
+    loadComponent: () => import('./movies/movies.page').then((m) => m.MoviesPage),
+  },
+  {
+    path: 'movies/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./movie-details/movie-details.page').then((m) => m.MovieDetailsPage),
+  },
+  {
+    path: 'favorites',
+    canActivate: [authGuard],
+    loadComponent: () => import('./favorites/favorites.page').then((m) => m.FavoritesPage),
+  },
+  {
     path: '',
     redirectTo: 'auth/login',
     pathMatch: 'full',
