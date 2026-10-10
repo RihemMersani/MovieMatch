@@ -53,7 +53,10 @@ export class AuthService {
 	async register(data: RegistrationData): Promise<void> {
 		this.ensureFirebaseConfiguration();
 
-		const credential = await createUserWithEmailAndPassword(auth!, data.email, data.password);
+		const credential = await this.withTimeout(
+			createUserWithEmailAndPassword(auth!, data.email, data.password),
+			'FIREBASE_TIMEOUT',
+		);
 
 		if (firestore) {
 			const profile: Omit<UserProfile, 'id' | 'createdAt'> = {
@@ -67,24 +70,41 @@ export class AuthService {
 				favoriteMovieIds: [],
 			};
 
-			await setDoc(doc(firestore, 'users', credential.user.uid), {
-				...profile,
-				createdAt: serverTimestamp(),
-			});
+			await this.withTimeout(
+				setDoc(doc(firestore, 'users', credential.user.uid), {
+					...profile,
+					createdAt: serverTimestamp(),
+				}),
+				'FIRESTORE_TIMEOUT',
+			);
 		}
 	}
 
 	async login(email: string, password: string): Promise<void> {
 		this.ensureFirebaseConfiguration();
-		const credential = await signInWithEmailAndPassword(auth!, email, password);
+		const credential = await this.withTimeout(
+			signInWithEmailAndPassword(auth!, email, password),
+			'FIREBASE_TIMEOUT',
+		);
 
 		if (firestore) {
-			const profileSnapshot = await getDoc(doc(firestore, 'users', credential.user.uid));
-			const profile = profileSnapshot.data() as Partial<UserProfile> | undefined;
+			try {
+				const profileSnapshot = await this.withTimeout(
+					getDoc(doc(firestore, 'users', credential.user.uid)),
+					'FIRESTORE_PROFILE_TIMEOUT',
+				);
+				const profile = profileSnapshot.data() as Partial<UserProfile> | undefined;
 
-			if (profile?.isDisabled) {
-				await this.logout();
-				throw new Error('ACCOUNT_DISABLED');
+				if (profile?.isDisabled) {
+					await this.logout();
+					throw new Error('ACCOUNT_DISABLED');
+				}
+			} catch (error) {
+				if (error instanceof Error && error.message === 'ACCOUNT_DISABLED') {
+					throw error;
+				}
+
+				console.warn('La connexion Firebase a réussi, mais le profil Firestore est indisponible.', error);
 			}
 		}
 	}
@@ -129,6 +149,18 @@ export class AuthService {
 			return 'Ce compte a été désactivé. Contactez un administrateur.';
 		}
 
+		if (error instanceof Error && error.message === 'FIREBASE_TIMEOUT') {
+			return 'Firebase ne répond pas. Vérifiez votre connexion et que le domaine est autorisé dans Firebase, puis réessayez.';
+		}
+
+		if (error instanceof Error && error.message === 'FIRESTORE_TIMEOUT') {
+			return 'Le compte a été créé, mais son profil n’a pas pu être enregistré. Vérifiez les règles Firestore.';
+		}
+
+		if (error instanceof Error && error.message === 'FIRESTORE_PROFILE_TIMEOUT') {
+			return 'La connexion a réussi, mais Firebase met trop de temps à charger votre profil. Vérifiez Firestore.';
+		}
+
 		const code = (error as AuthError | undefined)?.code;
 		switch (code) {
 			case 'auth/invalid-credential':
@@ -140,8 +172,37 @@ export class AuthService {
 				return 'Veuillez saisir une adresse email valide.';
 			case 'auth/weak-password':
 				return 'Le mot de passe doit contenir au moins 6 caractères.';
+			case 'auth/network-request-failed':
+				return 'La connexion à Firebase a échoué. Vérifiez votre connexion réseau et réessayez.';
+			case 'auth/operation-not-allowed':
+			case 'auth/admin-restricted-operation':
+				return 'La connexion par email est désactivée dans Firebase. Activez le fournisseur Email/Password dans Authentication > Sign-in method.';
+			case 'permission-denied':
+				return 'Firebase refuse l’accès au profil. Vérifiez les règles Firestore.';
+			case 'failed-precondition':
+				return 'Firestore n’est pas disponible. Créez la base Firestore dans la console Firebase.';
+			case 'unavailable':
+			case 'deadline-exceeded':
+				return 'Firebase est temporairement indisponible. Vérifiez votre connexion et réessayez.';
 			default:
 				return 'Une erreur est survenue. Vérifiez votre connexion et réessayez.';
+		}
+	}
+
+	private async withTimeout<T>(promise: Promise<T>, timeoutCode: string): Promise<T> {
+		let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+		try {
+			return await Promise.race([
+				promise,
+				new Promise<T>((_, reject) => {
+					timeoutId = setTimeout(() => reject(new Error(timeoutCode)), 15000);
+				}),
+			]);
+		} finally {
+			if (timeoutId !== undefined) {
+				clearTimeout(timeoutId);
+			}
 		}
 	}
 

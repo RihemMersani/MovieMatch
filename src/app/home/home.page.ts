@@ -18,4 +18,8 @@ export class HomePage {
     await this.authService.logout();
     await this.router.navigateByUrl('/auth/login', { replaceUrl: true });
   }
+
+  async openProfile(): Promise<void> {
+    await this.router.navigateByUrl('/profile');
+  }
 }
