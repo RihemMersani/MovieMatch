@@ -1,0 +1,71 @@
+.matches-content {
+  --background: var(--mm-cream);
+}
+
+.matches-shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.match-list {
+  display: grid;
+  gap: 14px;
+}
+
+ion-card {
+  --background: #ffffff;
+  border: 1px solid var(--mm-border);
+  border-radius: 8px;
+  margin: 0;
+}
+
+.match-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+ion-card-title {
+  color: var(--mm-ink);
+  font-size: 1.1rem;
+}
+
+ion-card-content {
+  color: var(--mm-muted);
+}
+
+ion-card-content p {
+  margin: 0 0 10px;
+}
+
+ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  background: var(--mm-lilac);
+  border-radius: 999px;
+  color: var(--mm-ink);
+  font-size: 0.85rem;
+  padding: 6px 10px;
+}
+
+.empty-state,
+.loading-state,
+.state-message {
+  color: var(--mm-muted);
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.empty-state h1 {
+  color: var(--mm-ink);
+  font-size: 1.35rem;
+}

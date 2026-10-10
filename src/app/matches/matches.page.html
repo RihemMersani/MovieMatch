@@ -1,0 +1,47 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Matching</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="matches-content">
+  <main class="matches-shell">
+    @if (isLoading) {
+      <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (errorMessage) {
+      <ion-text color="danger"><p class="state-message">{{ errorMessage }}</p></ion-text>
+    } @else if (!matches.length) {
+      <section class="empty-state">
+        <h1>Aucun utilisateur compatible</h1>
+        <p>Ajoutez plus de films en favoris pour obtenir des profils avec au moins 75 % de similarité.</p>
+        <ion-button fill="outline" (click)="refresh()">Actualiser</ion-button>
+      </section>
+    } @else {
+      <section class="match-list" aria-label="Utilisateurs compatibles">
+        @for (match of matches; track match.user.id) {
+          <ion-card>
+            <ion-card-header>
+              <div class="match-heading">
+                <ion-card-title>{{ match.user.firstName }} {{ match.user.lastName }}</ion-card-title>
+                <ion-badge color="primary">{{ match.matchScore }} %</ion-badge>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <p>{{ match.commonMovieIds.length }} film(s) en commun</p>
+              @if (match.commonMovies.length) {
+                <ul>
+                  @for (movie of match.commonMovies; track movie.id) {
+                    <li>{{ movie.title }}</li>
+                  }
+                </ul>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
+      </section>
+    }
+  </main>
+</ion-content>

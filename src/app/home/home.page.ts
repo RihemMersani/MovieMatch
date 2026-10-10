@@ -30,4 +30,8 @@ export class HomePage {
   async openFavorites(): Promise<void> {
     await this.router.navigateByUrl('/favorites');
   }
+
+  async openMatches(): Promise<void> {
+    await this.router.navigateByUrl('/matches');
+  }
 }

@@ -37,6 +37,11 @@ export const routes: Routes = [
     loadComponent: () => import('./favorites/favorites.page').then((m) => m.FavoritesPage),
   },
   {
+    path: 'matches',
+    canActivate: [authGuard],
+    loadComponent: () => import('./matches/matches.page').then((m) => m.MatchesPage),
+  },
+  {
     path: '',
     redirectTo: 'auth/login',
     pathMatch: 'full',
