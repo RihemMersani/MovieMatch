@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonButton, IonButtons, IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular';
 
@@ -10,9 +10,15 @@ import { AuthService } from '../core/services/auth.service';
   styleUrls: ['home.page.scss'],
   imports: [IonButton, IonButtons, IonHeader, IonToolbar, IonTitle, IonContent],
 })
-export class HomePage {
+export class HomePage implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  isAdmin = false;
+
+  async ngOnInit(): Promise<void> {
+    const profile = await this.authService.getCurrentProfile();
+    this.isAdmin = profile?.role === 'ADMIN';
+  }
 
   async logout(): Promise<void> {
     await this.authService.logout();
@@ -33,5 +39,13 @@ export class HomePage {
 
   async openMatches(): Promise<void> {
     await this.router.navigateByUrl('/matches');
+  }
+
+  async openAdmin(): Promise<void> {
+    if (!this.isAdmin) {
+      return;
+    }
+
+    await this.router.navigateByUrl('/admin');
   }
 }

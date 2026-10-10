@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
 import {
   IonButton,
   IonContent,
@@ -48,10 +50,42 @@ export class RegisterPage {
   });
   isSubmitting = false;
   errorMessage = '';
+  photoDataUrl = '';
+
+  async takePhoto(): Promise<void> {
+    this.errorMessage = '';
+
+    try {
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        await Camera.requestPermissions({ permissions: ['camera'] });
+      }
+
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        allowEditing: true,
+        resultType: CameraResultType.DataUrl,
+        source: isNative ? CameraSource.Camera : CameraSource.Prompt,
+      });
+
+      if (photo.dataUrl) {
+        this.photoDataUrl = photo.dataUrl;
+      }
+    } catch {
+      this.errorMessage = Capacitor.isNativePlatform()
+        ? 'La camera est indisponible ou son acces a ete refuse.'
+        : 'Aucune photo n\'a ete selectionnee. Autorisez la camera ou choisissez une image.';
+    }
+  }
 
   async submit(): Promise<void> {
     this.errorMessage = '';
     this.form.markAllAsTouched();
+
+    if (!this.photoDataUrl) {
+      this.errorMessage = 'Veuillez prendre ou selectionner une photo pour creer votre compte.';
+      return;
+    }
 
     if (this.form.invalid) {
       return;
@@ -59,7 +93,10 @@ export class RegisterPage {
 
     this.isSubmitting = true;
     try {
-      await this.authService.register(this.form.getRawValue());
+      await this.authService.register({
+        ...this.form.getRawValue(),
+        photoDataUrl: this.photoDataUrl,
+      });
       await this.router.navigateByUrl('/home', { replaceUrl: true });
     } catch (error) {
       this.errorMessage = this.authService.getErrorMessage(error);

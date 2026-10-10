@@ -14,5 +14,7 @@ export const environment = {
   tmdb: {
     apiBaseUrl: 'https://api.themoviedb.org/3',
     apiKey: ''
-  }
+  },
+
+  adminEmails: ['admin@moviematch.com']
 };

@@ -58,6 +58,41 @@ ion-note {
   margin: -4px 0 12px 12px;
 }
 
+.register-photo {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  margin: 8px 0 12px;
+}
+
+.register-photo-preview {
+  align-items: center;
+  background: linear-gradient(135deg, var(--mm-blush), var(--mm-lilac));
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 86px;
+  height: 86px;
+  justify-content: center;
+  overflow: hidden;
+  width: 86px;
+}
+
+.register-photo-preview img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.register-photo-preview span {
+  color: var(--ion-color-secondary);
+  font-weight: 800;
+}
+
+.register-photo ion-button {
+  margin-top: 0;
+}
+
 ion-button {
   --background: var(--ion-color-primary);
   --background-activated: var(--ion-color-primary-shade);

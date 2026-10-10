@@ -1,0 +1,169 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Administration</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="admin-content">
+  <main class="admin-shell">
+    @if (isLoading) {
+      <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (errorMessage && !stats) {
+      <ion-text color="danger"><p class="state-message">{{ errorMessage }}</p></ion-text>
+    } @else {
+      @if (errorMessage) {
+        <ion-text color="danger"><p class="form-message">{{ errorMessage }}</p></ion-text>
+      }
+      @if (successMessage) {
+        <ion-text color="success"><p class="form-message">{{ successMessage }}</p></ion-text>
+      }
+
+      @if (stats) {
+        <section class="stats-grid" aria-label="Statistiques">
+          <article>
+            <span>Utilisateurs</span>
+            <strong>{{ stats.totalUsers }}</strong>
+          </article>
+          <article>
+            <span>Actifs</span>
+            <strong>{{ stats.activeUsers }}</strong>
+          </article>
+          <article>
+            <span>Desactives</span>
+            <strong>{{ stats.disabledUsers }}</strong>
+          </article>
+          <article>
+            <span>Films</span>
+            <strong>{{ stats.totalMovies }}</strong>
+          </article>
+          <article>
+            <span>Ajouts admin</span>
+            <strong>{{ stats.manualMovies }}</strong>
+          </article>
+          <article>
+            <span>Favoris</span>
+            <strong>{{ stats.totalFavorites }}</strong>
+          </article>
+        </section>
+      }
+
+      <section class="admin-grid">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Gestion utilisateurs</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            @if (!users.length) {
+              <p class="muted">Aucun utilisateur.</p>
+            } @else {
+              <div class="admin-list">
+                @for (user of users; track user.id) {
+                  <div class="list-row">
+                    <div>
+                      <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                      <span>{{ user.email }}</span>
+                    </div>
+                    <div class="row-actions">
+                      <ion-badge [color]="user.isDisabled ? 'medium' : 'success'">
+                        {{ user.isDisabled ? 'Desactive' : user.role }}
+                      </ion-badge>
+                      <ion-button fill="outline" size="small" [disabled]="busyUserId === user.id" (click)="toggleUser(user)">
+                        @if (busyUserId === user.id) {
+                          <ion-spinner name="crescent"></ion-spinner>
+                        } @else {
+                          {{ user.isDisabled ? 'Reactiver' : 'Desactiver' }}
+                        }
+                      </ion-button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Ajouter un film</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <form [formGroup]="movieForm" (ngSubmit)="addMovie()">
+              <ion-item>
+                <ion-label position="stacked">Titre</ion-label>
+                <ion-input formControlName="title"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Resume</ion-label>
+                <ion-textarea formControlName="overview" rows="4"></ion-textarea>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Affiche</ion-label>
+                <ion-input formControlName="posterPath" placeholder="URL ou chemin d'image"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Image arriere-plan</ion-label>
+                <ion-input formControlName="backdropPath" placeholder="Optionnel"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Date de sortie</ion-label>
+                <ion-input type="date" formControlName="releaseDate"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Note</ion-label>
+                <ion-input type="number" min="0" max="10" step="0.1" formControlName="voteAverage"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-label position="stacked">Genres</ion-label>
+                <ion-input formControlName="genres" placeholder="Action, Comedie, Drame"></ion-input>
+              </ion-item>
+
+              @if (movieForm.invalid && movieForm.touched) {
+                <ion-note color="danger">Verifiez les informations du film.</ion-note>
+              }
+
+              <ion-button expand="block" type="submit" [disabled]="isSavingMovie">
+                @if (isSavingMovie) {
+                  <ion-spinner name="crescent"></ion-spinner>
+                } @else {
+                  Ajouter le film
+                }
+              </ion-button>
+            </form>
+          </ion-card-content>
+        </ion-card>
+      </section>
+
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Gestion films</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          @if (!movies.length) {
+            <p class="muted">Aucun film dans Firestore.</p>
+          } @else {
+            <div class="admin-list">
+              @for (movie of movies; track movie.id) {
+                <div class="list-row">
+                  <div>
+                    <strong>{{ movie.title }}</strong>
+                    <span>{{ movie.releaseDate || 'Date inconnue' }} · {{ movie.source }}</span>
+                  </div>
+                  <ion-button color="danger" fill="clear" size="small" [disabled]="busyMovieId === movie.id" (click)="deleteMovie(movie)">
+                    @if (busyMovieId === movie.id) {
+                      <ion-spinner name="crescent"></ion-spinner>
+                    } @else {
+                      Supprimer
+                    }
+                  </ion-button>
+                </div>
+              }
+            </div>
+          }
+        </ion-card-content>
+      </ion-card>
+    }
+  </main>
+</ion-content>

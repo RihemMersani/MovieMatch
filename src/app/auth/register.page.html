@@ -31,6 +31,19 @@
           <ion-input type="password" formControlName="password" autocomplete="new-password"></ion-input>
         </ion-item>
 
+        <section class="register-photo">
+          <div class="register-photo-preview">
+            @if (photoDataUrl) {
+              <img [src]="photoDataUrl" alt="Photo de profil" />
+            } @else {
+              <span>Photo</span>
+            }
+          </div>
+          <ion-button fill="outline" type="button" (click)="takePhoto()">
+            Prendre une photo
+          </ion-button>
+        </section>
+
         @if (form.controls.password.touched && form.controls.password.invalid) {
           <ion-note color="danger">Minimum 6 caractères.</ion-note>
         }

@@ -5,6 +5,9 @@
       <ion-button fill="clear" (click)="openMovies()">Films</ion-button>
       <ion-button fill="clear" (click)="openFavorites()">Favoris</ion-button>
       <ion-button fill="clear" (click)="openMatches()">Matching</ion-button>
+      @if (isAdmin) {
+        <ion-button fill="clear" (click)="openAdmin()">Admin</ion-button>
+      }
       <ion-button fill="clear" (click)="openProfile()">Profil</ion-button>
       <ion-button fill="clear" (click)="logout()">Déconnexion</ion-button>
     </ion-buttons>
@@ -22,5 +25,8 @@
     <strong>Ready to create an app?</strong>
     <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
     <ion-button (click)="openMatches()">Voir les matches</ion-button>
+    @if (isAdmin) {
+      <ion-button fill="outline" (click)="openAdmin()">Administration</ion-button>
+    }
   </div>
 </ion-content>

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
 	AuthError,
 	User,
@@ -15,8 +15,10 @@ import {
 } from 'firebase/firestore';
 import { BehaviorSubject, Observable, combineLatest, filter, from, map, take } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { auth, firestore } from '../firebase';
-import { UserProfile } from '../../models';
+import { StorageService } from './storage.service';
+import { UserProfile, UserRole } from '../../models';
 
 export interface RegistrationData {
 	firstName: string;
@@ -24,10 +26,12 @@ export interface RegistrationData {
 	age: number;
 	email: string;
 	password: string;
+	photoDataUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+	private readonly storageService = inject(StorageService);
 	private readonly currentUserSubject = new BehaviorSubject<User | null>(auth?.currentUser ?? null);
 	private readonly authReadySubject = new BehaviorSubject<boolean>(auth === null);
 
@@ -59,13 +63,19 @@ export class AuthService {
 		);
 
 		if (firestore) {
+			const photoUrl = data.photoDataUrl
+				? await this.withTimeout(
+					this.storageService.uploadProfilePhoto(credential.user.uid, data.photoDataUrl),
+					'STORAGE_TIMEOUT',
+				)
+				: '';
 			const profile: Omit<UserProfile, 'id' | 'createdAt'> = {
 				firstName: data.firstName,
 				lastName: data.lastName,
 				age: data.age,
 				email: data.email,
-				photoUrl: '',
-				role: 'USER',
+				photoUrl,
+				role: this.getRegistrationRole(data.email),
 				isDisabled: false,
 				favoriteMovieIds: [],
 			};
@@ -210,5 +220,13 @@ export class AuthService {
 		if (!auth) {
 			throw new Error('Firebase n’est pas encore configuré.');
 		}
+	}
+
+	private getRegistrationRole(email: string): UserRole {
+		const normalizedEmail = email.trim().toLowerCase();
+		const adminEmails = environment.adminEmails ?? [];
+		return adminEmails.some((adminEmail) => adminEmail.trim().toLowerCase() === normalizedEmail)
+			? 'ADMIN'
+			: 'USER';
 	}
 }
