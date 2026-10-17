@@ -1,4 +1,7 @@
+
+import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
+
 import {
   IonBackButton,
   IonBadge,
@@ -29,6 +32,7 @@ interface MatchViewModel extends MatchResult {
   templateUrl: './matches.page.html',
   styleUrls: ['./matches.page.scss'],
   imports: [
+    DecimalPipe,
     IonBackButton,
     IonBadge,
     IonButton,
@@ -46,8 +50,12 @@ interface MatchViewModel extends MatchResult {
   ],
 })
 export class MatchesPage implements OnInit {
-  private readonly matchingService = inject(MatchingService);
-  private readonly movieService = inject(MovieService);
+
+  private readonly matchingService =
+    inject(MatchingService);
+
+  private readonly movieService =
+    inject(MovieService);
 
   matches: MatchViewModel[] = [];
   isLoading = true;
@@ -62,21 +70,35 @@ export class MatchesPage implements OnInit {
   }
 
   private async loadMatches(): Promise<void> {
+
     this.isLoading = true;
     this.errorMessage = '';
 
     try {
-      const results = await this.matchingService.getCompatibleUsers();
+
+      const results =
+        await this.matchingService.getCompatibleUsers();
+
       this.matches = await Promise.all(
         results.map(async (match) => ({
           ...match,
-          commonMovies: await this.movieService.getMoviesByIds(match.commonMovieIds),
-        })),
+          commonMovies: await this.movieService.getMoviesByIds(
+            match.commonMovieIds
+          ),
+        }))
       );
-    } catch {
-      this.errorMessage = 'Impossible de charger les utilisateurs compatibles.';
+
+    } catch (error) {
+
+      console.error('Erreur matching :', error);
+
+      this.errorMessage =
+        'Impossible de charger les utilisateurs compatibles.';
+
     } finally {
+
       this.isLoading = false;
+
     }
   }
 }

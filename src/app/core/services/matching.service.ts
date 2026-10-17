@@ -1,3 +1,4 @@
+
 import { Injectable } from '@angular/core';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
@@ -8,58 +9,107 @@ const MATCH_THRESHOLD = 75;
 
 @Injectable({ providedIn: 'root' })
 export class MatchingService {
-	async getCompatibleUsers(threshold = MATCH_THRESHOLD): Promise<MatchResult[]> {
-		const currentUserId = auth?.currentUser?.uid;
-		if (!currentUserId || !firestore) {
-			return [];
-		}
 
-		const usersSnapshot = await getDocs(
-			query(collection(firestore, 'users'), where('isDisabled', '==', false)),
-		);
-		const users = usersSnapshot.docs.map((user) => ({
-			id: user.id,
-			...user.data(),
-		}) as UserProfile);
-		const currentUser = users.find((user) => user.id === currentUserId);
+  async getCompatibleUsers(
+    threshold = MATCH_THRESHOLD
+  ): Promise<MatchResult[]> {
 
-		if (!currentUser) {
-			return [];
-		}
+    const currentUserId = auth?.currentUser?.uid;
 
-		return users
-			.filter((user) => user.id !== currentUserId)
-			.map((user) => this.createMatchResult(currentUser, user))
-			.filter((match) => match.matchScore >= threshold)
-			.sort((left, right) => right.matchScore - left.matchScore);
-	}
+    if (!currentUserId || !firestore) {
+      return [];
+    }
 
-	calculateSimilarity(firstMovieIds: string[], secondMovieIds: string[]): number {
-		const firstFavorites = new Set(firstMovieIds);
-		const secondFavorites = new Set(secondMovieIds);
-		const commonMovieCount = [...firstFavorites].filter((movieId) => secondFavorites.has(movieId)).length;
-		const totalMovieCount = new Set([...firstFavorites, ...secondFavorites]).size;
+    const usersSnapshot = await getDocs(
+      query(
+        collection(firestore, 'users'),
+        where('isDisabled', '==', false)
+      )
+    );
 
-		if (totalMovieCount === 0) {
-			return 0;
-		}
+    const users = usersSnapshot.docs.map((user) => ({
+      id: user.id,
+      ...user.data(),
+    }) as UserProfile);
 
-		return Math.round((commonMovieCount / totalMovieCount) * 100);
-	}
+    const currentUser = users.find(
+      (user) => user.id === currentUserId
+    );
 
-	private createMatchResult(currentUser: UserProfile, candidate: UserProfile): MatchResult {
-		const currentFavorites = currentUser.favoriteMovieIds ?? [];
-		const candidateFavorites = candidate.favoriteMovieIds ?? [];
+    if (!currentUser) {
+      return [];
+    }
 
-		return {
-			user: candidate,
-			matchScore: this.calculateSimilarity(currentFavorites, candidateFavorites),
-			commonMovieIds: this.getCommonMovieIds(currentFavorites, candidateFavorites),
-		};
-	}
+    return users
+      .filter((user) => user.id !== currentUserId)
+      .map((user) =>
+        this.createMatchResult(currentUser, user)
+      )
+      .filter((match) => match.matchScore > threshold)
+      .sort(
+        (left, right) =>
+          right.matchScore - left.matchScore
+      );
+  }
 
-	private getCommonMovieIds(firstMovieIds: string[], secondMovieIds: string[]): string[] {
-		const secondFavorites = new Set(secondMovieIds);
-		return [...new Set(firstMovieIds)].filter((movieId) => secondFavorites.has(movieId));
-	}
+  calculateSimilarity(
+    firstMovieIds: string[],
+    secondMovieIds: string[]
+  ): number {
+
+    const firstFavorites = new Set(firstMovieIds);
+    const secondFavorites = new Set(secondMovieIds);
+
+    const commonMovieCount = [...firstFavorites].filter(
+      (movieId) => secondFavorites.has(movieId)
+    ).length;
+
+    const totalMovieCount = new Set([
+      ...firstFavorites,
+      ...secondFavorites,
+    ]).size;
+
+    if (totalMovieCount === 0) {
+      return 0;
+    }
+
+    // Score exact : aucun arrondi avant le filtrage
+    return (commonMovieCount / totalMovieCount) * 100;
+  }
+
+  private createMatchResult(
+    currentUser: UserProfile,
+    candidate: UserProfile
+  ): MatchResult {
+
+    const currentFavorites =
+      currentUser.favoriteMovieIds ?? [];
+
+    const candidateFavorites =
+      candidate.favoriteMovieIds ?? [];
+
+    return {
+      user: candidate,
+      matchScore: this.calculateSimilarity(
+        currentFavorites,
+        candidateFavorites
+      ),
+      commonMovieIds: this.getCommonMovieIds(
+        currentFavorites,
+        candidateFavorites
+      ),
+    };
+  }
+
+  private getCommonMovieIds(
+    firstMovieIds: string[],
+    secondMovieIds: string[]
+  ): string[] {
+
+    const secondFavorites = new Set(secondMovieIds);
+
+    return [...new Set(firstMovieIds)].filter(
+      (movieId) => secondFavorites.has(movieId)
+    );
+  }
 }
