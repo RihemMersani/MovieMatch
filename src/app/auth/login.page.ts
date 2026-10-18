@@ -57,7 +57,8 @@ export class LoginPage {
     this.isSubmitting = true;
     try {
       await this.authService.login(this.form.controls.email.value, this.form.controls.password.value);
-      await this.router.navigateByUrl('/home', { replaceUrl: true });
+      const profile = await this.authService.getCurrentProfile();
+      await this.router.navigateByUrl(profile?.role === 'ADMIN' ? '/admin' : '/home', { replaceUrl: true });
     } catch (error) {
       this.errorMessage = this.authService.getErrorMessage(error);
     } finally {

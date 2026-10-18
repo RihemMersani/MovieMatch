@@ -1,51 +1,45 @@
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import {
-  catchError,
-  from,
-  map,
-  of,
-  switchMap,
-  take,
-} from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
-
+export const authGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  return authService.isAuthenticated$.pipe(
-    take(1),
+  try {
+    const isAuthenticated = await firstValueFrom(
+      authService.isAuthenticated$
+    );
 
-    switchMap((isAuthenticated) => {
-      if (!isAuthenticated) {
-        return of(
-          router.createUrlTree(['/auth/login'])
-        );
-      }
+    // Si l'utilisateur n'est pas connecté
+    if (!isAuthenticated) {
+      await router.navigateByUrl('/auth/login');
+      return false;
+    }
 
-      return from(
-        authService.isCurrentUserActive()
-      ).pipe(
-        switchMap((isActive) => {
-          if (isActive) {
-            return of(true);
-          }
+    // Vérifier que le compte n'est pas désactivé
+    const isActive =
+      await authService.isCurrentUserActive();
 
-          return from(authService.logout()).pipe(
-            map(() =>
-              router.createUrlTree(['/auth/login'])
-            )
-          );
-        }),
+    if (!isActive) {
+      await authService.logout();
+      await router.navigateByUrl('/auth/login');
+      return false;
+    }
 
-        catchError(() =>
-          of(router.createUrlTree(['/auth/login']))
-        )
-      );
-    })
-  );
+    // Autoriser l'accès
+    return true;
+
+  } catch (error) {
+    console.error(
+      'Erreur de vérification de session :',
+      error
+    );
+
+    await router.navigateByUrl('/auth/login');
+    return false;
+  }
 };

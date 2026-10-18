@@ -1,5 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../core/services/auth.service';
 import {
   IonBackButton,
   IonBadge,
@@ -54,6 +56,8 @@ import { AdminService, AdminStats } from '../core/services/admin.service';
 })
 export class AdminPage implements OnInit {
   private readonly adminService = inject(AdminService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
 
   readonly movieForm = this.formBuilder.nonNullable.group({
@@ -75,6 +79,13 @@ export class AdminPage implements OnInit {
   busyMovieId = '';
   errorMessage = '';
   successMessage = '';
+
+  async openMovies(): Promise<void> { await this.router.navigateByUrl('/movies'); }
+
+  async logout(): Promise<void> {
+    await this.authService.logout();
+    await this.router.navigateByUrl('/auth/login', { replaceUrl: true });
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadDashboard();

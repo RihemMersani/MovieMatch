@@ -1,14 +1,16 @@
 <ion-header>
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
+    <ion-title>✦ MovieMatch Studio</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="openMovies()">Catalogue</ion-button>
+      <ion-button fill="clear" (click)="logout()">Déconnexion</ion-button>
     </ion-buttons>
-    <ion-title>Administration</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="admin-content">
   <main class="admin-shell">
+    <section class="admin-hero"><div><span class="admin-eyebrow">ESPACE ADMINISTRATEUR</span><h1>Tableau de bord</h1><p>Pilotez votre catalogue et gérez votre communauté en un seul endroit.</p></div><div class="admin-hero-icon" aria-hidden="true">✦</div></section>
     @if (isLoading) {
       <div class="loading-state"><ion-spinner name="crescent"></ion-spinner></div>
     } @else if (errorMessage && !stats) {

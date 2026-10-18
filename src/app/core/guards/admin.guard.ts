@@ -1,54 +1,52 @@
 
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-
-import {
-  catchError,
-  from,
-  map,
-  of,
-  switchMap,
-  take,
-} from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 
-export const adminGuard: CanActivateFn = () => {
-
+export const adminGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  return authService.isAuthenticated$.pipe(
-    take(1),
+  try {
+    const isAuthenticated = await firstValueFrom(
+      authService.isAuthenticated$
+    );
 
-    switchMap((isAuthenticated) => {
-      if (!isAuthenticated) {
-        return of(
-          router.createUrlTree(['/auth/login'])
-        );
-      }
+    // Vérifier la connexion
+    if (!isAuthenticated) {
+      await router.navigateByUrl('/auth/login');
+      return false;
+    }
 
-      return from(
-        authService.getCurrentProfile()
-      ).pipe(
-        map((profile) => {
-          if (profile?.isDisabled === true) {
-            void authService.logout();
-            return router.createUrlTree(['/auth/login']);
-          }
+    // Charger le profil depuis Firestore
+    const profile =
+      await authService.getCurrentProfile();
 
-          return (
-            profile?.role === 'ADMIN' &&
-            profile.isDisabled === false
-          )
-            ? true
-            : router.createUrlTree(['/home']);
-        }),
+    // Refuser les comptes absents ou désactivés
+    if (!profile || profile.isDisabled !== false) {
+      await authService.logout();
+      await router.navigateByUrl('/auth/login');
+      return false;
+    }
 
-        catchError(() =>
-          of(router.createUrlTree(['/auth/login']))
-        )
-      );
-    })
-  );
+    // Vérifier le rôle administrateur
+    if (profile.role !== 'ADMIN') {
+      await router.navigateByUrl('/home');
+      return false;
+    }
+
+    // Autoriser l'accès au dashboard admin
+    return true;
+
+  } catch (error) {
+    console.error(
+      'Erreur de vérification du rôle administrateur :',
+      error
+    );
+
+    await router.navigateByUrl('/auth/login');
+    return false;
+  }
 };

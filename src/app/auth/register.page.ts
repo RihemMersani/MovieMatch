@@ -52,51 +52,31 @@ export class RegisterPage {
   errorMessage = '';
   photoDataUrl = '';
 
-  
-async takePhoto(): Promise<void> {
+  async takePhoto(): Promise<void> {
+    this.errorMessage = '';
 
-  this.errorMessage = '';
+    try {
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        await Camera.requestPermissions({ permissions: ['camera'] });
+      }
 
-  try {
-
-    const isNative = Capacitor.isNativePlatform();
-
-    if (isNative) {
-      await Camera.requestPermissions({
-        permissions: ['camera']
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        allowEditing: true,
+        resultType: CameraResultType.DataUrl,
+        source: isNative ? CameraSource.Camera : CameraSource.Prompt,
       });
+
+      if (photo.dataUrl) {
+        this.photoDataUrl = photo.dataUrl;
+      }
+    } catch {
+      this.errorMessage = Capacitor.isNativePlatform()
+        ? 'La camera est indisponible ou son acces a ete refuse.'
+        : 'Aucune photo n\'a ete selectionnee. Autorisez la camera ou choisissez une image.';
     }
-
-    const photo = await Camera.getPhoto({
-      quality: 85,
-      allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Camera,
-      width: 800,
-      height: 800,
-    });
-
-    if (photo.dataUrl) {
-
-      this.photoDataUrl = photo.dataUrl;
-
-      console.log(
-        'Photo prise avec succès'
-      );
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      'Erreur caméra inscription :',
-      error
-    );
-
-    this.errorMessage =
-      'Impossible de prendre une photo. Autorisez la caméra dans votre navigateur.';
   }
-}
 
   async submit(): Promise<void> {
     this.errorMessage = '';
@@ -117,7 +97,8 @@ async takePhoto(): Promise<void> {
         ...this.form.getRawValue(),
         photoDataUrl: this.photoDataUrl,
       });
-      await this.router.navigateByUrl('/home', { replaceUrl: true });
+      const profile = await this.authService.getCurrentProfile();
+      await this.router.navigateByUrl(profile?.role === 'ADMIN' ? '/admin' : '/home', { replaceUrl: true });
     } catch (error) {
       this.errorMessage = this.authService.getErrorMessage(error);
     } finally {

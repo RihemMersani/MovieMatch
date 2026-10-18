@@ -1,32 +1,51 @@
-<ion-header [translucent]="true">
+<ion-header class="mm-header">
   <ion-toolbar>
-    <ion-title>MovieMatch</ion-title>
+    <ion-title><span class="brand-mark">✦</span> MovieMatch</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="openMovies()">Films</ion-button>
-      <ion-button fill="clear" (click)="openFavorites()">Favoris</ion-button>
-      <ion-button fill="clear" (click)="openMatches()">Matching</ion-button>
-      @if (isAdmin) {
-        <ion-button fill="clear" (click)="openAdmin()">Admin</ion-button>
-      }
-      <ion-button fill="clear" (click)="openProfile()">Profil</ion-button>
-      <ion-button fill="clear" (click)="logout()">Déconnexion</ion-button>
+      <ion-button (click)="openMovies()">Films</ion-button>
+      <ion-button (click)="openFavorites()">Favoris</ion-button>
+      <ion-button (click)="openMatches()">Matching</ion-button>
+      <ion-button (click)="openProfile()">Profil</ion-button>
+      <ion-button (click)="logout()">Déconnexion</ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
+<ion-content class="home-content">
+  <main class="home-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-dot"></span> VOTRE ESPACE CINÉMA</span>
+        <h1>Bonjour {{ firstName }} <span class="wave">✳</span><br><span>Votre prochaine pépite</span> vous attend.</h1>
+        <p>Explorez de nouveaux films, composez votre collection et rencontrez des cinéphiles qui partagent vos goûts.</p>
+        <div class="hero-actions">
+          <ion-button (click)="openMovies()">Explorer les films &nbsp; →</ion-button>
+          <ion-button fill="outline" (click)="openMatches()">Voir mes matchs</ion-button>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true"><span>✦</span><div class="reel">◉</div><small>YOUR MOVIE UNIVERSE</small></div>
+    </section>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+    <section class="overview" aria-label="Mon activité">
+      <button type="button" class="quick-card" (click)="openFavorites()"><span class="quick-icon purple">♥</span><span class="quick-meta"><small>Ma collection</small><strong>{{ favoriteCount }} films favoris</strong><em>Voir ma playlist →</em></span></button>
+      <button type="button" class="quick-card" (click)="openMatches()"><span class="quick-icon teal">✦</span><span class="quick-meta"><small>Vos affinités</small><strong>{{ matchCount }} compatibilités</strong><em>Découvrir mes matchs →</em></span></button>
+      <button type="button" class="quick-card" (click)="openProfile()"><span class="quick-icon blue">◎</span><span class="quick-meta"><small>Mon espace</small><strong>Mon profil</strong><em>Gérer mes informations →</em></span></button>
+    </section>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-    <ion-button (click)="openMatches()">Voir les matches</ion-button>
-    @if (isAdmin) {
-      <ion-button fill="outline" (click)="openAdmin()">Administration</ion-button>
-    }
-  </div>
+    <section class="featured">
+      <div class="section-heading"><div><span class="section-kicker">À DÉCOUVRIR</span><h2>À l'affiche en ce moment</h2></div><ion-button fill="clear" (click)="openMovies()">Tous les films →</ion-button></div>
+      @if (isLoading) { <p class="helper">Chargement de votre sélection…</p> }
+      @else if (!movies.length) { <div class="empty">Aucun film à afficher pour le moment. <button type="button" (click)="openMovies()">Ouvrir le catalogue →</button></div> }
+      @else {
+        <div class="movie-grid">
+          @for (movie of movies; track movie.id) {
+            <button class="movie-tile" type="button" (click)="openMovie(movie)">
+              @if (poster(movie)) { <img [src]="poster(movie)" [alt]="'Affiche de ' + movie.title" loading="lazy" /> }
+              @else { <div class="poster-empty">🎬</div> }
+              <span class="movie-info"><strong>{{ movie.title }}</strong><small>★ {{ movie.voteAverage || 0 }} / 10</small></span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+  </main>
 </ion-content>
