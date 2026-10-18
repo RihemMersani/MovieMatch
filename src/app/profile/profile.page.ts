@@ -127,7 +127,7 @@ export class ProfilePage implements OnInit {
           throw new Error('PROFILE_NOT_CONFIGURED');
         }
 
-        savedPhotoUrl = await this.storageService.uploadProfilePhoto(profile.id, this.selectedPhoto);
+        savedPhotoUrl = await this.storageService.prepareProfilePhoto(this.selectedPhoto);
       }
 
       await this.userService.updateCurrentProfile({
@@ -147,8 +147,14 @@ export class ProfilePage implements OnInit {
   }
 
   private getErrorMessage(error: unknown): string {
-    if (error instanceof Error && error.message === 'STORAGE_NOT_CONFIGURED') {
-      return 'Firebase Storage n’est pas configuré.';
+    if (error instanceof Error && error.message === 'PROFILE_IMAGE_TOO_LARGE') {
+      return 'La photo est trop volumineuse après compression.';
+    }
+    if (error instanceof Error && error.message === 'INVALID_PROFILE_IMAGE') {
+      return 'La photo sélectionnée est invalide.';
+    }
+    if (error instanceof Error && error.message === 'IMAGE_TIMEOUT') {
+      return 'La préparation de la photo a pris trop de temps.';
     }
 
     if (error instanceof Error && error.message === 'PROFILE_NOT_CONFIGURED') {

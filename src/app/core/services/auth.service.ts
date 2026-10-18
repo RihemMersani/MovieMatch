@@ -62,11 +62,16 @@ export class AuthService {
 			'FIREBASE_TIMEOUT',
 		);
 
-		if (firestore) {
+		if (!firestore) {
+			await this.logout();
+			throw new Error('PROFILE_UNAVAILABLE');
+		}
+
+		{
 			const photoUrl = data.photoDataUrl
 				? await this.withTimeout(
-					this.storageService.uploadProfilePhoto(credential.user.uid, data.photoDataUrl),
-					'STORAGE_TIMEOUT',
+					this.storageService.prepareProfilePhoto(data.photoDataUrl),
+					'IMAGE_TIMEOUT',
 				)
 				: '';
 			const profile: Omit<UserProfile, 'id' | 'createdAt'> = {
@@ -91,33 +96,38 @@ export class AuthService {
 	}
 
 	async login(email: string, password: string): Promise<void> {
-		this.ensureFirebaseConfiguration();
-		const credential = await this.withTimeout(
-			signInWithEmailAndPassword(auth!, email, password),
-			'FIREBASE_TIMEOUT',
-		);
+    this.ensureFirebaseConfiguration();
+    const credential = await this.withTimeout(
+      signInWithEmailAndPassword(auth!, email, password),
+      'FIREBASE_TIMEOUT',
+    );
+    try {
+      if (!firestore) throw new Error('PROFILE_UNAVAILABLE');
+      const snapshot = await this.withTimeout(
+        getDoc(doc(firestore, 'users', credential.user.uid)),
+        'FIRESTORE_PROFILE_TIMEOUT',
+      );
+      if (!snapshot.exists()) throw new Error('PROFILE_NOT_FOUND');
+      if (snapshot.data()['isDisabled'] !== false) throw new Error('ACCOUNT_DISABLED');
+    } catch (error) {
+      await this.logout();
+      throw error;
+    }
+  }
 
-		if (firestore) {
-			try {
-				const profileSnapshot = await this.withTimeout(
-					getDoc(doc(firestore, 'users', credential.user.uid)),
-					'FIRESTORE_PROFILE_TIMEOUT',
-				);
-				const profile = profileSnapshot.data() as Partial<UserProfile> | undefined;
-
-				if (profile?.isDisabled) {
-					await this.logout();
-					throw new Error('ACCOUNT_DISABLED');
-				}
-			} catch (error) {
-				if (error instanceof Error && error.message === 'ACCOUNT_DISABLED') {
-					throw error;
-				}
-
-				console.warn('La connexion Firebase a réussi, mais le profil Firestore est indisponible.', error);
-			}
-		}
-	}
+  async isCurrentUserActive(): Promise<boolean> {
+    const user = auth?.currentUser;
+    if (!user || !firestore) return false;
+    try {
+      const snapshot = await this.withTimeout(
+        getDoc(doc(firestore, 'users', user.uid)),
+        'FIRESTORE_PROFILE_TIMEOUT',
+      );
+      return snapshot.exists() && snapshot.data()['isDisabled'] === false;
+    } catch {
+      return false;
+    }
+  }
 
 	async logout(): Promise<void> {
 		if (auth) {
@@ -163,7 +173,27 @@ export class AuthService {
 			return 'Firebase ne répond pas. Vérifiez votre connexion et que le domaine est autorisé dans Firebase, puis réessayez.';
 		}
 
-		if (error instanceof Error && error.message === 'FIRESTORE_TIMEOUT') {
+		if (error instanceof Error && error.message === 'IMAGE_TIMEOUT') {
+      return 'La préparation de la photo a pris trop de temps.';
+    }
+
+    if (error instanceof Error && error.message === 'PROFILE_IMAGE_TOO_LARGE') {
+      return 'La photo est trop volumineuse même après compression.';
+    }
+
+    if (error instanceof Error && error.message === 'INVALID_PROFILE_IMAGE') {
+      return 'La photo est invalide.';
+    }
+
+    if (error instanceof Error && error.message === 'PROFILE_NOT_FOUND') {
+      return 'Profil Firestore introuvable.';
+    }
+
+    if (error instanceof Error && error.message === 'PROFILE_UNAVAILABLE') {
+      return 'Impossible de vérifier le profil Firebase.';
+    }
+
+    if (error instanceof Error && error.message === 'FIRESTORE_TIMEOUT') {
 			return 'Le compte a été créé, mais son profil n’a pas pu être enregistré. Vérifiez les règles Firestore.';
 		}
 
